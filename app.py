@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import sqlite3
 
-st.header("Student Mental health Tracker")
+st.header("Student Mental health Tracker application")
 
 #TO REMEMBER USER NAME
 if "user" not in st.session_state:
