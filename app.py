@@ -1,7 +1,10 @@
-import pandas as pd
-import matplotlib.pyplot as plt
+import datetime
+
 import streamlit as st
 import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 st.header("Student Mental health Tracker application")
 
@@ -9,8 +12,26 @@ st.header("Student Mental health Tracker application")
 if "user" not in st.session_state:
     st.session_state.user = None
 
-# Database Connection
-conn = sqlite3.connect("mentalhealth.db")
+# Database Creation
+class conn(sqlite3.Connection):
+    """Connection implementation with transaction-aware context management."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
+        return False
+
+
+conn = sqlite3.connect(
+    "mentalhealth.db",
+    check_same_thread=False,
+    factory=conn
+)
 cursor = conn.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users(
@@ -21,14 +42,13 @@ CREATE TABLE IF NOT EXISTS users(
 )
 """)
 
-conn.commit()
-
 # Mood Table
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS moods(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT,
-    mood TEXT
+    mood TEXT,
+    date TEXT
 )
 """)
 # Journal Table
@@ -36,18 +56,8 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS journal(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT,
-    entry TEXT
-)
-""")
-
-
-conn.commit()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    email TEXT,
-    password TEXT
+    entry TEXT,
+    date TEXT
 )
 """)
 
@@ -55,8 +65,6 @@ conn.commit()
 
 # Page Settings
 st.set_page_config(page_title="Mindful")
-
-
 
 #Sidebar Menu
 page = st.sidebar.selectbox(
@@ -89,18 +97,27 @@ if page == "Register":
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
-    if st.button("Register"):
+    if st.button("Create Account"):
         try:
             cursor.execute(
                 "INSERT INTO users(name,email,password) VALUES(?,?,?)",
                 (name, email, password)
             )
             conn.commit()
-            st.success("Registration Successful")
+            st.success("Account Created Successfully")
 
         except sqlite3.IntegrityError:
-            st.error("Email already registered. Please Login.")
+            st.error("Email already exists. Please Login.")
+
 #login page
+
+#session state for user login error fix
+if "user" not in st.session_state:
+    st.session_state.user=None
+
+if "email" not in st.session_state:
+    st.session_state.email=None
+
 elif page == "Login":
 
     st.header("🔐 Login/for existing user")
@@ -125,7 +142,7 @@ elif page == "Login":
                     
 
         else:
-            st.error("Invalid Login")
+            st.error("Invalid Email or Password")
 
 if st.session_state.user is None and page not in ["Login", "Register"]:
     st.warning("Please Login First")
@@ -159,31 +176,35 @@ elif page == "Mood Tracker":
             "😣 Stressed"
         ]
     )
+    from datetime import datetime
+    if st.button("Save Mood:"):
+     today = datetime.now().strftime("%d-%m-%Y %H:%M")
 
-    if st.button("Save Mood"):
-
-        cursor.execute(
-            "INSERT INTO moods(email,mood) VALUES(?,?)",
-            (st.session_state.email, mood)
-        )
-
-        conn.commit()
-
-        st.success("Mood Saved Successfully")
+     cursor.execute(
+        "INSERT INTO moods(email,mood,date) VALUES(?,?,?)",
+        (st.session_state.email,mood,today)
+    )
+    conn.commit()
+    st.success("Mood Saved Successfully")
 
     st.subheader("Mood History")
 
     cursor.execute(
-        "SELECT mood FROM moods WHERE email=?",
+        "SELECT mood, date FROM moods WHERE email=?",
         (st.session_state.email,)
     )
 
     moods = cursor.fetchall()
 
-    for item in moods:
-        st.write(item[0])
+    for mood,date  in moods:
+        st.write(f"{date}-{mood}")
 
 # JOURNAL PAGE
+
+#Session state for journal count error fix
+if "email"not in st.session_state:
+    st.session_state.email=None
+
 elif page == "Journal":
 
     st.header("Journal")
@@ -193,30 +214,38 @@ elif page == "Journal":
     )
 
     if st.button("Save Journal"):
-
+        today = datetime.now().strftime("%d-%m-%Y %H:%M")
+        
         cursor.execute(
-            "INSERT INTO journal(entry) VALUES(?)",
-            (entry,)
+                "INSERT INTO journal(email,entry,date) VALUES(?,?,?)",
+                (st.session_state.email,entry,today)
         )
-
         conn.commit()
-
         st.success("Journal Saved Successfully")
 
     st.subheader("Previous Entries")
 
     cursor.execute(
-        "SELECT entry FROM journal"
+        "SELECT entry, date FROM journal WHERE email=? ORDER BY id DESC",
+        (st.session_state.email,)
     )
 
     entries = cursor.fetchall()
     if entries:
-        for item in entries:
-            st.write("•", item[0])
+        for entry, date in entries:
+            st.write(f"{date}")
+            st.write(f"{entry}")
+            st.write("---")
     else:
         st.write("No Journal Entries Found")
 
 # PROFILE PAGE
+
+#session state for profile count error fix
+if "user"not in st.session_state:
+    st.session_state.user=None
+if "email"not in st.session_state:
+    st.session_state.email=None
 elif page == "Profile":
 
     st.header("👤 My Profile")
@@ -239,7 +268,7 @@ elif page == "Profile":
     )
 
     journal_count = cursor.fetchone()[0]
-
+    st.subheader("Statistics")
     st.write("😊 Total Mood Entries:", mood_count)
     st.write("📖 Total Journal Entries:", journal_count)
 
@@ -249,6 +278,7 @@ elif page == "Profile":
         st.session_state.user = None
         st.session_state.email = None
         st.success("Logged Out Successfully")
+        st.rerun()
 
 #Meditation Page
 elif page == "Meditation":
@@ -299,7 +329,7 @@ elif page == "Mood Analytics":
 
     moods = cursor.fetchall()
 
-    if moods:
+    if len(moods)>0:
 
         mood_list = [m[0] for m in moods]
 
@@ -316,7 +346,8 @@ elif page == "Mood Analytics":
             kind="bar",
             ax=ax
         )
-
+        ax.set_xlabel("Mood")
+        ax.set_ylabel("Count")
         st.pyplot(fig)
 
     else:
