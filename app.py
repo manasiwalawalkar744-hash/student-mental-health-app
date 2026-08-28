@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import streamlit as st
 import sqlite3
 import pandas as pd
@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 st.header("Student Mental health Tracker application")
 
-#TO REMEMBER USER NAME
+# TO REMEMBER USER NAME
 if "user" not in st.session_state:
     st.session_state.user = None
 
@@ -64,7 +64,7 @@ conn.commit()
 # Page Settings
 st.set_page_config(page_title="Mindful")
 
-#Sidebar Menu
+# Sidebar Menu
 page = st.sidebar.selectbox(
     "Menu",
     [
@@ -86,7 +86,7 @@ if st.session_state.user:
         st.session_state.user = None
         st.rerun()
 
-#Register page
+# Register page
 if page == "Register":
 
     st.header("📝 Register/create new account")
@@ -107,9 +107,9 @@ if page == "Register":
         except sqlite3.IntegrityError:
             st.error("Email already exists. Please Login.")
 
-#login page
+# Login page
 
-#session state for user login error fix
+# Session state for user login error fix
 if "user" not in st.session_state:
     st.session_state.user = None
 
@@ -165,7 +165,7 @@ if page == "Mood Tracker":
 
     st.header("Mood Tracker")
 
-    mood = st.radio(
+    mood_selection = st.radio(
         "How are you feeling today?",
         [
             "😊 Happy",
@@ -174,13 +174,12 @@ if page == "Mood Tracker":
             "😣 Stressed"
         ]
     )
-    from datetime import datetime
     if st.button("Save Mood:"):
         today = datetime.now().strftime("%d-%m-%Y %H:%M")
 
         cursor.execute(
             "INSERT INTO moods(email,mood,date) VALUES(?,?,?)",
-            (st.session_state.email, mood, today)
+            (st.session_state.email, mood_selection, today)
         )
         conn.commit()
         st.success("Mood Saved Successfully")
@@ -194,12 +193,12 @@ if page == "Mood Tracker":
 
     moods = cursor.fetchall()
 
-    for mood, date in moods:
-        st.write(f"{date}-{mood}")
+    for mood_entry, date in moods:
+        st.write(f"{date}-{mood_entry}")
 
 # JOURNAL PAGE
 
-#Session state for journal count error fix
+# Session state for journal count error fix
 if "email" not in st.session_state:
     st.session_state.email = None
 
@@ -207,7 +206,7 @@ if page == "Journal":
 
     st.header("Journal")
 
-    entry = st.text_area(
+    journal_entry = st.text_area(
         "How was your day?"
     )
 
@@ -216,7 +215,7 @@ if page == "Journal":
         
         cursor.execute(
                 "INSERT INTO journal(email,entry,date) VALUES(?,?,?)",
-                (st.session_state.email, entry, today)
+                (st.session_state.email, journal_entry, today)
         )
         conn.commit()
         st.success("Journal Saved Successfully")
@@ -230,16 +229,16 @@ if page == "Journal":
 
     entries = cursor.fetchall()
     if entries:
-        for entry, date in entries:
+        for entry_text, date in entries:
             st.write(f"{date}")
-            st.write(f"{entry}")
+            st.write(f"{entry_text}")
             st.write("---")
     else:
         st.write("No Journal Entries Found")
 
 # PROFILE PAGE
 
-#session state for profile count error fix
+# Session state for profile count error fix
 if "user" not in st.session_state:
     st.session_state.user = None
 if "email" not in st.session_state:
@@ -279,7 +278,7 @@ if page == "Profile":
         st.success("Logged Out Successfully")
         st.rerun()
 
-#Meditation Page
+# Meditation Page
 if page == "Meditation":
 
     st.header("🧘 Meditation")
