@@ -111,12 +111,12 @@ if page == "Register":
 
 #session state for user login error fix
 if "user" not in st.session_state:
-    st.session_state.user=None
+    st.session_state.user = None
 
 if "email" not in st.session_state:
-    st.session_state.email=None
+    st.session_state.email = None
 
-elif page == "Login":
+if page == "Login":
 
     st.header("🔐 Login/for existing user")
 
@@ -127,7 +127,7 @@ elif page == "Login":
 
         cursor.execute(
             "SELECT * FROM users WHERE email=? AND password=?",
-            (email,password)
+            (email, password)
         )
 
         user = cursor.fetchone()
@@ -147,7 +147,7 @@ if st.session_state.user is None and page not in ["Login", "Register"]:
     st.stop()           
 
 # HOME PAGE
-elif page == "Home":
+if page == "Home":
 
     if st.session_state.user:
 
@@ -161,7 +161,7 @@ elif page == "Home":
         st.warning("Please Login First")
 
 # MOOD TRACKER PAGE
-elif page == "Mood Tracker":
+if page == "Mood Tracker":
 
     st.header("Mood Tracker")
 
@@ -176,14 +176,14 @@ elif page == "Mood Tracker":
     )
     from datetime import datetime
     if st.button("Save Mood:"):
-     today = datetime.now().strftime("%d-%m-%Y %H:%M")
+        today = datetime.now().strftime("%d-%m-%Y %H:%M")
 
-     cursor.execute(
-        "INSERT INTO moods(email,mood,date) VALUES(?,?,?)",
-        (st.session_state.email,mood,today)
-    )
-    conn.commit()
-    st.success("Mood Saved Successfully")
+        cursor.execute(
+            "INSERT INTO moods(email,mood,date) VALUES(?,?,?)",
+            (st.session_state.email, mood, today)
+        )
+        conn.commit()
+        st.success("Mood Saved Successfully")
 
     st.subheader("Mood History")
 
@@ -194,16 +194,16 @@ elif page == "Mood Tracker":
 
     moods = cursor.fetchall()
 
-    for mood,date  in moods:
+    for mood, date in moods:
         st.write(f"{date}-{mood}")
 
 # JOURNAL PAGE
 
 #Session state for journal count error fix
-if "email"not in st.session_state:
-    st.session_state.email=None
+if "email" not in st.session_state:
+    st.session_state.email = None
 
-elif page == "Journal":
+if page == "Journal":
 
     st.header("Journal")
 
@@ -216,7 +216,7 @@ elif page == "Journal":
         
         cursor.execute(
                 "INSERT INTO journal(email,entry,date) VALUES(?,?,?)",
-                (st.session_state.email,entry,today)
+                (st.session_state.email, entry, today)
         )
         conn.commit()
         st.success("Journal Saved Successfully")
@@ -240,11 +240,12 @@ elif page == "Journal":
 # PROFILE PAGE
 
 #session state for profile count error fix
-if "user"not in st.session_state:
-    st.session_state.user=None
-if "email"not in st.session_state:
-    st.session_state.email=None
-elif page == "Profile":
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "email" not in st.session_state:
+    st.session_state.email = None
+
+if page == "Profile":
 
     st.header("👤 My Profile")
 
@@ -279,7 +280,7 @@ elif page == "Profile":
         st.rerun()
 
 #Meditation Page
-elif page == "Meditation":
+if page == "Meditation":
 
     st.header("🧘 Meditation")
 
@@ -298,7 +299,7 @@ elif page == "Meditation":
         st.success("Meditation Started")
 
 # Emergency Help Page
-elif page == "Emergency Help":
+if page == "Emergency Help":
 
     st.header("🚨 Emergency Help")
 
@@ -316,7 +317,7 @@ elif page == "Emergency Help":
 
 
 # Mood Analytics Page
-elif page == "Mood Analytics":
+if page == "Mood Analytics":
 
     st.header("📊 Mood Analytics")
 
@@ -327,7 +328,7 @@ elif page == "Mood Analytics":
 
     moods = cursor.fetchall()
 
-    if len(moods)>0:
+    if len(moods) > 0:
 
         mood_list = [m[0] for m in moods]
 
