@@ -69,7 +69,6 @@ page = st.sidebar.selectbox(
     "Menu",
     [
         "Login",
-        "Register",
         "Home",
         "Mood Tracker",
         "Journal",
@@ -85,37 +84,9 @@ if st.session_state.user:
     if st.sidebar.button("Logout"):
         st.session_state.user = None
         st.rerun()
-
-# Register page
-if page == "Register":
-
-    st.header("📝 Register/create new account")
-
-    name = st.text_input("Name")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-
-    if st.button("Create Account"):
-        # Input Validation
-        if not name or not email or not password:
-            st.error("❌ Please fill all fields!")
-        elif len(password) < 6:
-            st.error("❌ Password must be at least 6 characters long!")
-        elif "@" not in email:
-            st.error("❌ Please enter a valid email address!")
-        else:
-            try:
-                cursor.execute(
-                    "INSERT INTO users(name,email,password) VALUES(?,?,?)",
-                    (name, email, password)
-                )
-                conn.commit()
-                st.success("✅ Account Created Successfully! Please Login.")
-
-            except sqlite3.IntegrityError:
-                st.error("❌ Email already exists. Please Login.")
-            except Exception as e:
-                st.error(f"❌ An error occurred: {str(e)}")
+        
+        if st.session_state.user is None:
+            page = "Login"
 
 # Login page
 
@@ -128,7 +99,7 @@ if "email" not in st.session_state:
 
 if page == "Login":
 
-    st.header("🔐 Login/for existing user")
+    st.header("🔐 Please Login to use app")
 
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
@@ -158,8 +129,8 @@ if page == "Login":
             except Exception as e:
                 st.error(f"❌ An error occurred: {str(e)}")
 
-if st.session_state.user is None and page not in ["Login", "Register"]:
-    st.warning("⚠️ Please Login First")
+if st.session_state.user is None and page != "Login":
+    st.warning("⚠️ Please Login to use app")
     st.stop()           
 
 # HOME PAGE
